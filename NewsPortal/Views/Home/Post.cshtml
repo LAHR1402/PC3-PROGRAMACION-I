@@ -1,0 +1,206 @@
+@model NewsPortal.Models.PostViewModel
+
+@{
+    ViewData["Title"] = Model.Post.Title;
+}
+
+<div class="container mt-4">
+    <div class="spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="card-title">@Model.Post.Title</h1>
+                    <div class="mb-4">
+                        <small class="text-muted">Autor: @Model.Author.Name</small>
+                        <span class="mx-3">|</span>
+                        <small class="text-muted">Post #@Model.Post.Id</small>
+                    </div>
+                    <p class="card-text">@Model.Post.Body</p>
+
+                    <div class="mt-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <button id="likeButton" class="btn btn-success me-2">
+                                <i class="bi bi-hand-thumbs-up"></i> Me gusta (@Model.Likes)
+                            </button>
+                            <button id="dislikeButton" class="btn btn-danger">
+                                <i class="bi bi-hand-thumbs-down"></i> No me gusta (@Model.Dislikes)
+                            </button>
+                        </div>
+                    </div>
+
+                    <h3 class="mt-5">Comentarios</h3>
+                    @if (Model.Comments != null && Model.Comments.Length > 0)
+                    {
+                        <div class="list-group">
+                            @foreach (var comment in Model.Comments)
+                            {
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">@comment.Name</h5>
+                                        <small class="text-muted">@comment.Email</small>
+                                    </div>
+                                    <p class="mb-1">@comment.Body</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            No hay comentarios para este post.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/feedback-config.js"></script>
+    <script src="~/js/utils.js"></script>
+    <script>
+        // Función para mostrar/ocultar spinner
+        function toggleSpinner(show) {
+            const spinner = document.querySelector('.spinner');
+            spinner.style.display = show ? 'block' : 'none';
+        }
+
+        // Función para actualizar los contadores
+        async function updateCounters(postId) {
+            try {
+                const response = await fetch(`${feedbackConfig.apiUrl}/count/${postId}`);
+                if (response.ok) {
+                    const count = await response.json();
+                    const likeButton = document.getElementById('likeButton');
+                    const dislikeButton = document.getElementById('dislikeButton');
+                    
+                    if (likeButton && dislikeButton) {
+                        likeButton.textContent = `Me gusta (${count.Likes})`;
+                        dislikeButton.textContent = `No me gusta (${count.Dislikes})`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error al actualizar contadores:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar el ID del usuario
+            const userId = initializeUserId();
+            
+            const likeButton = document.getElementById('likeButton');
+            const dislikeButton = document.getElementById('dislikeButton');
+            const postId = @Model.Post.Id;
+
+            if (!likeButton || !dislikeButton) {
+                console.error('Botones no encontrados');
+                return;
+            }
+
+            // Actualizar los contadores al cargar
+            updateCounters(postId);
+
+            // Manejar click en like
+            likeButton.addEventListener('click', async function() {
+                try {
+                    // Mostrar spinner
+                    toggleSpinner(true);
+                    
+                    // Obtener el ID del usuario
+                    const userId = sessionStorage.getItem('userId') || 'user_' + Math.random().toString(36).substr(2, 9);
+                    sessionStorage.setItem('userId', userId);
+
+                    const feedback = {
+                        PostId: postId,
+                        Sentimiento: 'like',
+                        Fecha: new Date().toISOString(),
+                        UserId: userId
+                    };
+
+                    console.log('Enviando feedback:', feedback);
+
+                    const response = await fetch(feedbackConfig.apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(feedback)
+                    });
+
+                    // Ocultar spinner
+                    toggleSpinner(false);
+
+                    if (response.ok) {
+                        // Animar el botón
+                        likeButton.classList.add('pulse');
+                        setTimeout(() => likeButton.classList.remove('pulse'), 500);
+                        
+                        // Actualizar los contadores
+                        updateCounters(postId);
+                    } else {
+                        const errorData = await response.json();
+                        console.error('Error del servidor:', errorData);
+                        alert(errorData || 'Ya has dejado un feedback para este post');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al enviar feedback. Detalles: ' + error.message);
+                }
+            });
+
+            // Manejar click en dislike
+            dislikeButton.addEventListener('click', async function() {
+                try {
+                    // Mostrar spinner
+                    toggleSpinner(true);
+                    
+                    // Obtener el ID del usuario
+                    const userId = sessionStorage.getItem('userId') || 'user_' + Math.random().toString(36).substr(2, 9);
+                    sessionStorage.setItem('userId', userId);
+
+                    const feedback = {
+                        PostId: postId,
+                        Sentimiento: 'dislike',
+                        Fecha: new Date().toISOString(),
+                        UserId: userId
+                    };
+
+                    console.log('Enviando feedback:', feedback);
+
+                    const response = await fetch(feedbackConfig.apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(feedback)
+                    });
+
+                    // Ocultar spinner
+                    toggleSpinner(false);
+
+                    if (response.ok) {
+                        // Animar el botón
+                        dislikeButton.classList.add('pulse');
+                        setTimeout(() => dislikeButton.classList.remove('pulse'), 500);
+                        
+                        // Actualizar los contadores
+                        updateCounters(postId);
+                    } else {
+                        const errorData = await response.json();
+                        console.error('Error del servidor:', errorData);
+                        alert(errorData || 'Ya has dejado un feedback para este post');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al enviar feedback. Detalles: ' + error.message);
+                }
+            });
+        });
+    </script>
+}

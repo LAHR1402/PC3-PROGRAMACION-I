@@ -1,0 +1,36 @@
+@model SharedModels.Services.Post[]
+
+@{
+    ViewData["Title"] = "Noticias";
+}
+
+<div class="container mt-4">
+    <h1 class="display-4 mb-4">Noticias Recientes</h1>
+    
+    @if (Model != null && Model.Length > 0)
+    {
+        <div class="row">
+            @foreach (var post in Model)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">@post.Title</h5>
+                            <p class="card-text">@post.Body.Substring(0, 100)...</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="@Url.Action("Post", "Home", new { id = post.Id })" class="btn btn-primary">Leer más</a>
+                                <small class="text-muted">Post #@post.Id</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            No hay noticias disponibles en este momento.
+        </div>
+    }
+</div>
