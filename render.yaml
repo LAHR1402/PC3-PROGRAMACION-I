@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: newsportal
+    env: dotnet
+    buildCommand: dotnet build NewsPortal/NewsPortal.csproj
+    startCommand: dotnet NewsPortal/NewsPortal.dll
+    plan: free
+    autoDeploy: true
+
+  - type: web
+    name: feedback-api
+    env: dotnet
+    buildCommand: dotnet build FeedbackAPI/FeedbackAPI.csproj
+    startCommand: dotnet FeedbackAPI/FeedbackAPI.dll
+    plan: free
+    autoDeploy: true
